@@ -204,7 +204,11 @@ export function validateArchive(archive, index = 0, seenIds = new Set()) {
   requireField('category', (value) => typeof value === 'string' && CATEGORIES.includes(value), 'category harus termasuk kategori yang valid.');
   requireField('description', (value) => typeof value === 'string', 'description harus string.');
   requireField('origin', (value) => typeof value === 'string', 'origin harus string.');
-  requireField('period', (value) => typeof value === 'string', 'period harus string.');
+  requireField(
+    'period',
+    (value) => value === null || typeof value === 'string',
+    'period harus string atau null.',
+  );
   requireField(
     'imageUrl',
     (value) => typeof value === 'string' && (value === '' || isValidMediaUrl(value, 'image')),

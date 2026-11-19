@@ -6,6 +6,7 @@
  * dari input mentah.
  */
 
+import { filterArchives } from './archive-filter.js';
 import {
   ARCHIVE_TYPES,
   CATEGORIES,
@@ -455,24 +456,7 @@ function viewArchives(route) {
           '<button type="button" class="btn btn--primary" data-reset-filter>Hapus filter</button>',
         );
 
-  const filtered = () => {
-    const q = state.q.trim().toLocaleLowerCase('id');
-    const list = all.filter((item) => {
-      const matchesSearch =
-        !q ||
-        item.title.toLocaleLowerCase('id').includes(q) ||
-        item.description.toLocaleLowerCase('id').includes(q);
-      const matchesCategory = !state.category || item.category === state.category;
-      const matchesFeatured = !state.featured || item.featured;
-      return matchesSearch && matchesCategory && matchesFeatured;
-    });
-    const byTitle = (a, b) => a.title.localeCompare(b.title, 'id');
-    if (state.sort === 'az') list.sort(byTitle);
-    else if (state.sort === 'za') list.sort((a, b) => -byTitle(a, b));
-    else if (state.sort === 'oldest') list.sort((a, b) => a.createdAt.localeCompare(b.createdAt));
-    else list.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
-    return list;
-  };
+  const filtered = () => filterArchives(all, state);
 
   const hasActiveFilter = () =>
     Boolean(state.q || state.category || state.featured || state.sort !== 'newest');

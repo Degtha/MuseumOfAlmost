@@ -6,6 +6,7 @@
  */
 
 import './style.css';
+import { parseHash } from './hash-route.js';
 import { consumeStorageNotice, seedIfEmpty } from './store.js';
 import { renderApp, renderShell, toast } from './ui.js';
 
@@ -19,33 +20,6 @@ const TITLES = {
   admin: 'Museum Management (Demo) — Museum of Almost',
   notfound: 'Halaman tidak ditemukan — Museum of Almost',
 };
-
-function parseHash() {
-  const raw = window.location.hash.replace(/^#/, '') || '/';
-  const [pathAndAnchor = '/', queryString = ''] = raw.split('?');
-
-  let path = pathAndAnchor.startsWith('/') ? pathAndAnchor : `/${pathAndAnchor}`;
-  let anchor = null;
-  const anchorIndex = path.indexOf('#');
-  if (anchorIndex !== -1) {
-    anchor = path.slice(anchorIndex + 1) || null;
-    path = path.slice(0, anchorIndex) || '/';
-  }
-
-  const query = new URLSearchParams(queryString);
-  const base = { query, anchor, path };
-
-  if (path === '/') return { ...base, name: 'entrance' };
-  if (path === '/archives') return { ...base, name: 'archives' };
-  if (path.startsWith('/archive/')) {
-    return { ...base, name: 'archive', id: decodeURIComponent(path.slice('/archive/'.length)) };
-  }
-  if (path === '/contribute') return { ...base, name: 'contribute' };
-  if (path === '/time-capsule') return { ...base, name: 'time-capsule' };
-  if (path === '/timeline') return { ...base, name: 'timeline' };
-  if (path === '/admin') return { ...base, name: 'admin' };
-  return { ...base, name: 'notfound' };
-}
 
 function setFocusAndScroll(anchor) {
   const app = document.getElementById('app');
@@ -63,7 +37,7 @@ function setFocusAndScroll(anchor) {
 }
 
 function render() {
-  const route = parseHash();
+  const route = parseHash(window.location.hash);
   try {
     renderShell(route);
     renderApp(route);
