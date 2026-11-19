@@ -1034,18 +1034,15 @@ img {
 /* ---------------------------------------------------------------- toolbar */
 
 .toolbar {
-  position: sticky;
-  top: 72px;
-  z-index: 80;
+  position: static;
   max-width: var(--container);
-  margin: 0 auto var(--space-8);
-  padding: var(--space-4) 20px;
+  margin: 0 auto var(--space-6);
+  padding: var(--space-3) 20px;
   background: rgba(23, 23, 21, 0.94);
-  backdrop-filter: blur(8px);
   border-top: 1px solid var(--border);
   border-bottom: 1px solid var(--border);
   display: grid;
-  gap: var(--space-4);
+  gap: var(--space-3);
 }
 
 .search {
@@ -2048,10 +2045,6 @@ img {
 
   .navbar {
     height: 80px;
-  }
-
-  .toolbar {
-    top: 80px;
   }
 
   .nav__overlay,
