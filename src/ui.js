@@ -8,6 +8,7 @@
 
 import { filterArchives } from './archive-filter.js';
 import {
+  ARCHIVE_IMAGES,
   ARCHIVE_TYPES,
   CATEGORIES,
   CATEGORY_INITIALS,
@@ -283,12 +284,13 @@ function wireNavigation() {
 /* ------------------------------------------------------------- components */
 
 function mediaBlock(item, variant = '') {
-  const url = store.safeImageUrl(item.imageUrl);
+  const url =
+    store.safeImageUrl(item.imageUrl) || store.safeImageUrl(ARCHIVE_IMAGES[item.id]);
   const initial = CATEGORY_INITIALS[item.category] || 'MoA';
   const alt = escapeHtml(`Dokumentasi arsip: ${item.title}`);
   if (url) {
     return `<div class="media ${variant}">
-      <img src="${escapeHtml(url)}" alt="${alt}" loading="lazy" data-fallback-initial="${initial}" />
+      <img src="${escapeHtml(url)}" alt="${alt}" data-fallback-initial="${initial}" />
       <span class="media__fallback" aria-hidden="true">${escapeHtml(initial)}</span>
     </div>`;
   }

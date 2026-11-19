@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600" width="800" height="600">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#2a2926"/><stop offset="1" stop-color="#171715"/></linearGradient>
+    <radialGradient id="glow" cx="0.5" cy="0.75" r="0.7"><stop offset="0" stop-color="#a77b50" stop-opacity="0.32"/><stop offset="1" stop-color="#a77b50" stop-opacity="0"/></radialGradient>
+    <filter id="grain"><feTurbulence type="fractalNoise" baseFrequency="0.8" numOctaves="3" stitchTiles="stitch"/><feColorMatrix type="saturate" values="0"/></filter>
+  </defs>
+  <rect width="800" height="600" fill="url(#bg)"/>
+  <rect width="800" height="600" fill="url(#glow)"/>
+  <rect x="180" y="430" width="440" height="60" rx="8" fill="#2a2926" stroke="#3a3833" stroke-width="3"/>
+  <path d="M330 430q-18-52 12-78 6 34 30 44 8-40 38-54-4 44 26 66 34-20 30-70 44 46 20 92z" fill="#a65b4b" opacity="0.45"/>
+  <ellipse cx="400" cy="385" rx="230" ry="92" fill="#171715" stroke="#a77b50" stroke-width="4"/>
+  <ellipse cx="400" cy="385" rx="198" ry="70" fill="#5c3b24"/>
+  <path d="M250 388q70-46 150-6t150-8" fill="none" stroke="#a77b50" stroke-width="7" opacity="0.8"/>
+  <path d="M280 408q60 34 140 4t140 6" fill="none" stroke="#3a2a1c" stroke-width="9" opacity="0.8"/>
+  <g fill="#cfc5b3" opacity="0.12"><circle cx="350" cy="372" r="9"/><circle cx="430" cy="400" r="7"/><circle cx="470" cy="368" r="6"/></g>
+  <g fill="none" stroke="#cfc5b3" stroke-width="3" opacity="0.28">
+    <path d="M340 280q-24-36 0-70"/><path d="M400 268q-26-40 2-78"/><path d="M460 282q-22-34 2-66"/>
+  </g>
+  <rect width="800" height="600" filter="url(#grain)" opacity="0.07"/>
+</svg>

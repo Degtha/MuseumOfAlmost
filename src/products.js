@@ -227,6 +227,19 @@ export const SEED_ARCHIVES = Object.freeze([
   },
 ]);
 
+/**
+ * Ilustrasi SVG lokal sebagai fallback untuk arsip bawaan.
+ *
+ * Dipakai ui.js hanya ketika `imageUrl` arsip kosong. Data yang sudah ada di
+ * localStorage tidak ditimpa, sehingga arsip lama langsung mendapat ilustrasi
+ * tanpa migrasi. Path relatif mengikuti lokasi aplikasi saat di-deploy.
+ */
+export const ARCHIVE_IMAGES = Object.freeze(
+  Object.fromEntries(
+    SEED_ARCHIVES.map((item) => [item.id, `./image/${item.id}.svg`]),
+  ),
+);
+
 export const TIMELINE_PERIODS = Object.freeze([
   {
     year: 1990,

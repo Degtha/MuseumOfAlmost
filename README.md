@@ -87,6 +87,7 @@ Dashboard ini **tanpa login**; siapa pun yang membuka halaman di browser yang sa
 - URL media dibatasi pada path relatif lokal atau data URL dengan MIME yang diizinkan.
 - CSP dasar didefinisikan lewat meta tag di `index.html`.
 - Penanganan hash rusak: rute tidak dikenal/encoding salah menampilkan halaman 404, bukan error.
+- Ilustrasi SVG lokal dipakai otomatis untuk arsip bawaan yang `imageUrl`-nya kosong. Gambar atau data URL yang diisi pengguna tetap lebih prioritas, dan data yang sudah tersimpan tidak ditimpa.
 - Notifikasi `toast` untuk hasil aksi dan kondisi penyimpanan.
 
 ---
@@ -118,7 +119,8 @@ src/
   archive-filter.js pencarian/filter/sort
   style.css         design system dan layout responsif
 tests/              unit test Vitest
-image/              aset gambar lokal
+public/image/       ilustrasi SVG lokal untuk 8 arsip bawaan
+image/              aset gambar lokal tambahan
 ```
 
 ---
@@ -151,7 +153,7 @@ Vite akan membuka alamat lokal (default `http://localhost:5173`). Halaman yang t
 npm test
 ```
 
-Perintah ini menjalankan `vitest run` sekali dan selesai. Saat ini ada **7 file test / 63 test**:
+Perintah ini menjalankan `vitest run` sekali dan selesai. Saat ini ada **8 file test / 66 test**:
 
 | File | Yang diuji |
 |---|---|
@@ -162,6 +164,7 @@ Perintah ini menjalankan `vitest run` sekali dan selesai. Saat ini ada **7 file 
 | `tests/hash-route.test.js` | rute valid dan hash encoding rusak |
 | `tests/security.test.js` | escaping HTML, URL media, query WhatsApp |
 | `tests/csp.test.js` | keberadaan CSP dasar di `index.html` |
+| `tests/images.test.js` | pemetaan, validitas path, dan keberadaan file SVG ilustrasi |
 
 ---
 
@@ -205,5 +208,5 @@ Catatan deployment:
 - **Kontribusi bersifat lokal.** Formulir kontribusi tidak mengirim data ke kurator atau pengguna lain.
 - **Time Capsule hanya simulasi.** Pesan tidak benar-benar dikirim atau dijadwalkan ke masa depan.
 - **Linimasa ilustratif.** Periode 1990–2026 adalah narasi contoh, bukan data sejarah terverifikasi.
-- **Konten awal contoh.** Delapan arsip bawaan dan teksnya bersifat ilustratif; sebagian besar `imageUrl` dan `audioUrl` kosong sehingga tampilan memakai placeholder.
+- **Konten awal contoh.** Delapan arsip bawaan dan teksnya bersifat ilustratif. `imageUrl` pada data bawaan sengaja kosong; tampilan memakai ilustrasi SVG lokal di `public/image/` sebagai fallback. `audioUrl` juga kosong sehingga tidak ada pemutar audio pada arsip bawaan.
 - **Keamanan adalah pertahanan dasar sisi klien.** `escapeHtml()`, pembatasan URL media, dan CSP meta membantu mencegah beberapa masalah umum, tetapi tidak menggantikan validasi dan kontrol akses di server jika aplikasi kelak dikembangkan dengan backend.
