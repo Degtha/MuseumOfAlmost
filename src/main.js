@@ -6,7 +6,7 @@
  */
 
 import './style.css';
-import { seedIfEmpty } from './store.js';
+import { consumeStorageNotice, seedIfEmpty } from './store.js';
 import { renderApp, renderShell, toast } from './ui.js';
 
 const TITLES = {
@@ -77,10 +77,16 @@ function render() {
 
 window.addEventListener('hashchange', render);
 
+let storageNotice = null;
 try {
   seedIfEmpty();
+  storageNotice = consumeStorageNotice();
 } catch {
   toast('Penyimpanan lokal tidak tersedia. Data tidak akan bertahan setelah refresh.', 'error');
 }
 
 render();
+
+if (storageNotice) {
+  toast(storageNotice, 'error');
+}

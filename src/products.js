@@ -18,6 +18,20 @@ export const CATEGORIES = Object.freeze([
   'Everyday Life',
 ]);
 
+/** Tipe arsip yang boleh dipilih pada form Dashboard. */
+export const ARCHIVE_TYPES = Object.freeze([
+  'Permainan Tradisional',
+  'Rekaman Suara',
+  'Resep Keluarga',
+  'Bangunan Hilang',
+  'Kenangan Masa Kecil',
+  'Kebiasaan Sehari-hari',
+  'Seni Pertunjukan',
+  'Benda Sehari-hari',
+  'Kontribusi Pengunjung',
+  'Arsip',
+]);
+
 export const CATEGORY_INITIALS = Object.freeze({
   'Cultural Heritage': 'CH',
   'Childhood Memories': 'CM',

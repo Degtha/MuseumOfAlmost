@@ -7,6 +7,7 @@
  */
 
 import {
+  ARCHIVE_TYPES,
   CATEGORIES,
   CATEGORY_INITIALS,
   OPENING_QUESTION,
@@ -26,6 +27,8 @@ const ICONS = {
   edit: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20h4l10-10-4-4L4 16zM14 6l4 4"/></svg>',
   trash: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M9 7V4h6v3m-9 0 1 13h10l1-13"/></svg>',
   plus: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>',
+  download: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11m-5-5 5 5 5-5M5 19h14"/></svg>',
+  upload: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20V9m-5 5 5-5 5 5M5 5h14"/></svg>',
   check: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 4 4L19 6"/></svg>',
   alert: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4 2 20h20zM12 10v4m0 3h.01"/></svg>',
   whatsapp:
@@ -105,6 +108,47 @@ export function toast(message, type = 'success') {
 function clearToast() {
   const region = document.getElementById('toast-region');
   if (region) region.innerHTML = '';
+}
+
+/* ----------------------------------------------------------------- modals */
+
+function focusableIn(modal) {
+  return [...modal.querySelectorAll('button, input, select, textarea, [href]')].filter(
+    (element) => !element.disabled && !element.closest('[hidden]'),
+  );
+}
+
+function openModal(modal, trigger) {
+  modal.returnFocus = trigger ?? null;
+  modal.hidden = false;
+  (modal.querySelector('[data-autofocus]') ?? focusableIn(modal)[0])?.focus();
+}
+
+function closeModal(modal) {
+  if (!modal || modal.hidden) return;
+  modal.hidden = true;
+  const trigger = modal.returnFocus;
+  modal.returnFocus = null;
+  if (trigger && document.contains(trigger)) trigger.focus();
+}
+
+function closeAllModals() {
+  document.querySelectorAll('.modal:not([hidden])').forEach(closeModal);
+}
+
+function trapModalFocus(modal, event) {
+  if (event.key !== 'Tab') return;
+  const focusable = focusableIn(modal);
+  if (!focusable.length) return;
+  const first = focusable[0];
+  const last = focusable[focusable.length - 1];
+  if (event.shiftKey && document.activeElement === first) {
+    event.preventDefault();
+    last.focus();
+  } else if (!event.shiftKey && document.activeElement === last) {
+    event.preventDefault();
+    first.focus();
+  }
 }
 
 /* ------------------------------------------------------------------ shell */
@@ -220,7 +264,7 @@ function wireNavigation() {
     document.addEventListener('keydown', (event) => {
       if (event.key !== 'Escape') return;
       if (document.body.classList.contains('menu-open')) closeMenu(true);
-      document.querySelectorAll('.modal:not([hidden])').forEach(closeModal);
+      closeAllModals();
     });
     menuListenerAttached = true;
   }
@@ -1073,17 +1117,21 @@ function viewTimeline() {
 function archiveRow(item, index) {
   const featured = item.featured
     ? `<span class="table-featured">${svg('star')} UNGGULAN</span>`
-    : '<span class="meta">—</span>';
-  return `<tr data-row-id="${escapeHtml(item.id)}">
-    <td>${pad(index + 1)}</td>
-    <td><strong>${escapeHtml(item.title)}</strong><small>${escapeHtml(item.source)}</small></td>
-    <td>${escapeHtml(item.category)}</td>
-    <td>${escapeHtml(item.period || 'Tidak diketahui')}</td>
-    <td>${featured}</td>
-    <td class="table-actions">
-      <button type="button" class="btn btn--small" data-admin-action="feature" data-id="${escapeHtml(item.id)}" aria-pressed="${item.featured}">Unggulkan/Batalkan</button>
-      <button type="button" class="btn btn--small" data-admin-action="edit" data-id="${escapeHtml(item.id)}">Edit</button>
-      <button type="button" class="btn btn--small btn--danger" data-admin-action="delete" data-id="${escapeHtml(item.id)}">Hapus</button>
+    : '<span class="meta">BIASA</span>';
+  const title = escapeHtml(item.title);
+  const id = escapeHtml(item.id);
+  return `<tr data-row-id="${id}">
+    <td data-label="No">${pad(index + 1)}</td>
+    <td data-label="Judul Arsip"><strong>${title}</strong><small>${escapeHtml(item.source)}</small></td>
+    <td data-label="Kategori">${escapeHtml(item.category)}</td>
+    <td data-label="Asal">${escapeHtml(item.origin || '—')}</td>
+    <td data-label="Periode">${escapeHtml(item.period || 'Tidak diketahui')}</td>
+    <td data-label="Featured">${featured}</td>
+    <td data-label="Tanggal Dibuat"><time datetime="${escapeHtml(item.createdAt)}">${escapeHtml(formatDate(item.createdAt))}</time></td>
+    <td class="table-actions" data-label="Aksi">
+      <button type="button" class="btn btn--small" data-admin-action="feature" data-id="${id}" aria-pressed="${item.featured}" aria-label="${item.featured ? 'Batalkan status unggulan' : 'Jadikan unggulan'}: ${title}">${item.featured ? 'Batalkan unggulan' : 'Unggulkan'}</button>
+      <button type="button" class="btn btn--small" data-admin-action="edit" data-id="${id}" aria-label="Edit arsip: ${title}">${svg('edit')} Edit</button>
+      <button type="button" class="btn btn--small btn--danger" data-admin-action="delete" data-id="${id}" aria-label="Hapus arsip: ${title}">${svg('trash')} Hapus</button>
     </td>
   </tr>`;
 }
@@ -1113,8 +1161,9 @@ function viewAdmin() {
           ${sectionLabel('OVERVIEW')}
           <div class="stats stats--admin">
             <div class="stat"><span class="stat__number">${pad(stats.archives)}</span><span class="stat__label">TOTAL ARCHIVES</span></div>
-            <div class="stat"><span class="stat__number">${pad(stats.categories)}</span><span class="stat__label">CATEGORIES</span></div>
-            <div class="stat"><span class="stat__number">${pad(stats.contributions)}</span><span class="stat__label">CONTRIBUTIONS</span></div>
+            <div class="stat"><span class="stat__number">${pad(stats.categories)}</span><span class="stat__label">TOTAL CATEGORIES</span></div>
+            <div class="stat"><span class="stat__number">${pad(stats.featured)}</span><span class="stat__label">FEATURED ARCHIVES</span></div>
+            <div class="stat"><span class="stat__number">${pad(stats.contributions)}</span><span class="stat__label">TOTAL CONTRIBUTIONS</span></div>
           </div>
         </section>
 
@@ -1125,11 +1174,15 @@ function viewAdmin() {
           </div>
           <div class="table-wrap">
             <table class="admin-table">
-              <thead><tr><th>NO</th><th>TITLE</th><th>CATEGORY</th><th>PERIOD</th><th>FEATURED</th><th>ACTIONS</th></tr></thead>
+              <thead><tr><th>NO</th><th>JUDUL ARSIP</th><th>KATEGORI</th><th>ASAL</th><th>PERIODE</th><th>FEATURED</th><th>TANGGAL DIBUAT</th><th>AKSI</th></tr></thead>
               <tbody id="admin-rows">${archives.map(archiveRow).join('')}</tbody>
             </table>
           </div>
-          ${archives.length ? '' : '<p class="notice">Belum ada arsip.</p>'}
+          ${
+            archives.length
+              ? ''
+              : emptyState('Belum ada arsip.', 'Arsip baru akan muncul di sini setelah ditambahkan.', '')
+          }
         </section>
 
         <section id="admin-contributions" class="admin__section">
@@ -1149,10 +1202,16 @@ function viewAdmin() {
         </section>
 
         <section id="admin-reset" class="admin__section">
-          ${sectionLabel('SETTINGS')}
-          <h2 tabindex="-1">Reset data demo</h2>
-          <p class="notice">Mengembalikan 8 arsip awal. Kontribusi dan kapsul akan hilang.</p>
-          <button type="button" class="btn btn--danger" id="reset-demo">Reset data demo</button>
+          ${sectionLabel('DATA MANAGEMENT')}
+          <h2 tabindex="-1">Kelola Data Lokal</h2>
+          <p class="notice">Seluruh arsip disimpan di browser ini pada key <code>museum-of-almost:archives:v1</code>. Ekspor untuk cadangan, impor untuk mengganti arsip, atau reset untuk kembali ke data contoh.</p>
+          <div class="data-actions">
+            <button type="button" class="btn btn--outline" id="export-archives">${svg('download')} Export Archives</button>
+            <button type="button" class="btn btn--outline" id="import-archives">${svg('upload')} Import Archives</button>
+            <input type="file" id="import-file" accept=".json,application/json" hidden />
+            <button type="button" class="btn btn--danger" id="reset-demo">Reset Demo Data</button>
+          </div>
+          <p class="field__hint">File JSON hasil export dapat dipakai lagi melalui Import Archives. Kontribusi dan Time Capsule memiliki penyimpanan tersendiri dan tidak ikut diubah.</p>
         </section>
       </div>
     </div>
@@ -1163,97 +1222,163 @@ function viewAdmin() {
         <div class="modal__head"><h2 id="modal-title" tabindex="-1">Tambah Arsip</h2><button type="button" class="modal__close" data-modal-close aria-label="Tutup">${svg('close')}</button></div>
         <form class="form" id="archive-form" novalidate>
           <p class="form-errors" id="archive-errors" role="alert" hidden></p>
-          <div class="field"><label class="field__label" for="arc-title">Judul <span class="required">*</span></label><input id="arc-title" name="title" type="text" maxlength="100" /><p class="field__error" id="err-arc-title" role="alert"></p></div>
+          <div class="field"><label class="field__label" for="arc-title">Judul Arsip <span class="required">*</span></label><input id="arc-title" name="title" type="text" maxlength="100" data-autofocus /><p class="field__error" id="err-arc-title" role="alert"></p></div>
           <div class="field"><label class="field__label" for="arc-category">Kategori <span class="required">*</span></label><select id="arc-category" name="category"><option value="">Pilih kategori</option>${CATEGORIES.map((c) => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join('')}</select><p class="field__error" id="err-arc-category" role="alert"></p></div>
           <div class="field-row">
-            <div class="field"><label class="field__label" for="arc-origin">Asal</label><input id="arc-origin" name="origin" type="text" maxlength="100" /></div>
-            <div class="field"><label class="field__label" for="arc-period">Periode</label><input id="arc-period" name="period" type="text" maxlength="40" /></div>
+            <div class="field"><label class="field__label" for="arc-origin">Asal atau lokasi <span class="required">*</span></label><input id="arc-origin" name="origin" type="text" maxlength="100" /><p class="field__error" id="err-arc-origin" role="alert"></p></div>
+            <div class="field"><label class="field__label" for="arc-period">Periode <span class="required">*</span></label><input id="arc-period" name="period" type="text" maxlength="40" /><p class="field__error" id="err-arc-period" role="alert"></p></div>
           </div>
-          <div class="field"><label class="field__label" for="arc-type">Jenis arsip</label><input id="arc-type" name="archiveType" type="text" maxlength="80" /></div>
-          <div class="field"><label class="field__label" for="arc-description">Deskripsi <span class="required">*</span></label><textarea id="arc-description" name="description" rows="3" maxlength="180"></textarea><p class="field__error" id="err-arc-description" role="alert"></p></div>
-          <div class="field"><label class="field__label" for="arc-story">Cerita <span class="required">*</span></label><textarea id="arc-story" name="story" rows="5"></textarea><p class="field__error" id="err-arc-story" role="alert"></p></div>
-          <div class="field"><label class="field__label" for="arc-value">Nilai sejarah / emosional</label><textarea id="arc-value" name="historicalValue" rows="2"></textarea></div>
+          <div class="field-row">
+            <div class="field"><label class="field__label" for="arc-image">URL Gambar <span class="optional">(opsional)</span></label><input id="arc-image" name="imageUrl" type="text" placeholder="./images/arsip.jpg" /><small class="field__hint">Path lokal atau data URL: png, jpeg, webp, gif.</small><p class="field__error" id="err-arc-imageUrl" role="alert"></p></div>
+            <div class="field"><label class="field__label" for="arc-audio">URL Audio <span class="optional">(opsional)</span></label><input id="arc-audio" name="audioUrl" type="text" placeholder="./audio/arsip.mp3" /><small class="field__hint">Path lokal atau data URL: mp3, wav, ogg, webm.</small><p class="field__error" id="err-arc-audioUrl" role="alert"></p></div>
+          </div>
+          <div class="field"><label class="field__label" for="arc-type">Tipe Arsip <span class="required">*</span></label><select id="arc-type" name="archiveType"><option value="">Pilih tipe arsip</option>${ARCHIVE_TYPES.map((type) => `<option value="${escapeHtml(type)}">${escapeHtml(type)}</option>`).join('')}</select><p class="field__error" id="err-arc-archiveType" role="alert"></p></div>
+          <div class="field"><label class="field__label" for="arc-description">Deskripsi <span class="required">*</span></label><textarea id="arc-description" name="description" rows="3" maxlength="500"></textarea><p class="field__error" id="err-arc-description" role="alert"></p></div>
+          <div class="field"><label class="field__label" for="arc-value">Nilai sejarah atau emosional</label><textarea id="arc-value" name="historicalValue" rows="2"></textarea></div>
           <label class="checkbox"><input type="checkbox" name="featured" id="arc-featured" /><span>Arsip unggulan</span></label>
           <div class="modal__actions"><button type="button" class="btn btn--outline" data-modal-close>Batal</button><button type="submit" class="btn btn--primary">Simpan arsip</button></div>
         </form>
       </div>
+    </div>
+
+    <div class="modal" id="confirm-modal" hidden>
+      <div class="modal__overlay" data-modal-close></div>
+      <div class="modal__panel modal__panel--confirm" role="alertdialog" aria-modal="true" aria-labelledby="confirm-title" aria-describedby="confirm-message">
+        <div class="modal__head"><h2 id="confirm-title" tabindex="-1">Konfirmasi</h2><button type="button" class="modal__close" data-modal-close aria-label="Tutup">${svg('close')}</button></div>
+        <p class="confirm-message" id="confirm-message"></p>
+        <div class="modal__actions"><button type="button" class="btn btn--outline" data-modal-close>Batal</button><button type="button" class="btn btn--danger" id="confirm-accept">Konfirmasi</button></div>
+      </div>
     </div>`;
 
   const mount = (root) => {
+    const modals = [...root.querySelectorAll('.modal')];
     const modal = root.querySelector('#archive-modal');
+    const confirmModal = root.querySelector('#confirm-modal');
     const form = root.querySelector('#archive-form');
     const modalTitle = root.querySelector('#modal-title');
     const errors = root.querySelector('#archive-errors');
+    const confirmTitle = root.querySelector('#confirm-title');
+    const confirmMessage = root.querySelector('#confirm-message');
+    const confirmAccept = root.querySelector('#confirm-accept');
     let editingId = null;
-    let lastTrigger = null;
+    let confirmHandler = null;
 
     const refresh = () => window.dispatchEvent(new Event('hashchange'));
+    const value = (name) => String(form.elements.namedItem(name)?.value ?? '').trim();
 
-    const openModal = (item, trigger) => {
-      editingId = item?.id ?? null;
-      lastTrigger = trigger;
-      modalTitle.textContent = item ? 'Edit Arsip' : 'Tambah Arsip';
-      ['title', 'category', 'origin', 'period', 'archiveType', 'description', 'story', 'historicalValue'].forEach(
-        (name) => {
-          if (form.elements.namedItem(name)) form.elements.namedItem(name).value = item?.[name] ?? '';
-        },
-      );
-      form.elements.namedItem('featured').checked = Boolean(item?.featured);
+    const clearFieldErrors = () => {
+      form.querySelectorAll('.field__error').forEach((node) => {
+        node.textContent = '';
+      });
+      form.querySelectorAll('.has-error').forEach((node) => node.classList.remove('has-error'));
+      form.querySelectorAll('[aria-invalid]').forEach((node) => node.removeAttribute('aria-invalid'));
       errors.hidden = true;
-      errors.innerHTML = '';
-      modal.hidden = false;
-      form.elements.namedItem('title').focus();
+      errors.replaceChildren();
     };
 
-    const closeModal = () => {
-      modal.hidden = true;
-      lastTrigger?.focus();
+    const openArchiveModal = (item, trigger) => {
+      editingId = item?.id ?? null;
+      modalTitle.textContent = item ? 'Edit Arsip' : 'Tambah Arsip';
+      [
+        'title',
+        'category',
+        'origin',
+        'period',
+        'archiveType',
+        'description',
+        'historicalValue',
+        'imageUrl',
+        'audioUrl',
+      ].forEach((name) => {
+        const field = form.elements.namedItem(name);
+        if (field) field.value = item?.[name] ?? '';
+      });
+      form.elements.namedItem('featured').checked = Boolean(item?.featured);
+      clearFieldErrors();
+      openModal(modal, trigger);
     };
+
+    const openConfirm = ({ title, message, confirmLabel, trigger }, handler) => {
+      confirmTitle.textContent = title;
+      confirmMessage.textContent = message;
+      confirmAccept.textContent = confirmLabel;
+      confirmHandler = handler;
+      openModal(confirmModal, trigger);
+      confirmAccept.focus();
+    };
+
+    modals.forEach((dialog) => {
+      dialog.addEventListener('keydown', (event) => trapModalFocus(dialog, event));
+      dialog.querySelectorAll('[data-modal-close]').forEach((button) =>
+        button.addEventListener('click', () => {
+          if (dialog === confirmModal) confirmHandler = null;
+          closeModal(dialog);
+        }),
+      );
+    });
+
+    confirmAccept.addEventListener('click', () => {
+      const handler = confirmHandler;
+      confirmHandler = null;
+      closeModal(confirmModal);
+      handler?.();
+    });
 
     const validateForm = () => {
       const messages = {
-        title: form.elements.namedItem('title').value.trim().length >= 3 ? '' : 'Judul minimal 3 karakter.',
-        category: CATEGORIES.includes(form.elements.namedItem('category').value)
+        title: value('title') ? '' : 'Judul arsip wajib diisi.',
+        category: CATEGORIES.includes(value('category')) ? '' : 'Pilih kategori yang valid.',
+        origin: value('origin') ? '' : 'Asal arsip wajib diisi.',
+        period: value('period') ? '' : 'Periode wajib diisi.',
+        archiveType: ARCHIVE_TYPES.includes(value('archiveType'))
           ? ''
-          : 'Pilih kategori yang valid.',
-        description: form.elements.namedItem('description').value.trim().length >= 10 ? '' : 'Deskripsi minimal 10 karakter.',
-        story: form.elements.namedItem('story').value.trim().length >= 20 ? '' : 'Cerita minimal 20 karakter.',
+          : 'Pilih tipe arsip yang tersedia.',
+        description: value('description') ? '' : 'Deskripsi wajib diisi.',
+        imageUrl: !value('imageUrl') || store.isValidMediaUrl(value('imageUrl'), 'image')
+          ? ''
+          : 'URL gambar tidak valid. Gunakan path lokal atau data URL gambar.',
+        audioUrl: !value('audioUrl') || store.isValidMediaUrl(value('audioUrl'), 'audio')
+          ? ''
+          : 'URL audio tidak valid. Gunakan path lokal atau data URL audio.',
       };
       Object.entries(messages).forEach(([name, text]) => {
         const input = form.elements.namedItem(name);
-        input.setAttribute('aria-invalid', text ? 'true' : 'false');
-        root.querySelector(`#err-arc-${name}`).textContent = text;
+        if (input) {
+          input.setAttribute('aria-invalid', text ? 'true' : 'false');
+          input.closest('.field')?.classList.toggle('has-error', Boolean(text));
+        }
+        const errorNode = root.querySelector(`#err-arc-${name}`);
+        if (errorNode) errorNode.textContent = text;
       });
       return messages;
     };
 
-    root.querySelectorAll('[data-modal-close]').forEach((button) =>
-      button.addEventListener('click', closeModal),
-    );
-
-    modal.addEventListener('keydown', (event) => {
-      if (event.key !== 'Tab') return;
-      const focusable = [...modal.querySelectorAll('button, input, select, textarea')].filter(
-        (element) => !element.disabled,
-      );
-      const first = focusable[0];
-      const last = focusable[focusable.length - 1];
-      if (event.shiftKey && document.activeElement === first) {
-        event.preventDefault();
-        last.focus();
-      } else if (!event.shiftKey && document.activeElement === last) {
-        event.preventDefault();
-        first.focus();
-      }
-    });
+    const showErrors = (messages) => {
+      errors.replaceChildren();
+      const strong = document.createElement('strong');
+      strong.textContent = 'Periksa kembali:';
+      const list = document.createElement('ul');
+      Object.values(messages)
+        .filter(Boolean)
+        .forEach((message) => {
+          const item = document.createElement('li');
+          item.textContent = message;
+          list.append(item);
+        });
+      errors.append(strong, list);
+      errors.hidden = false;
+    };
 
     root.querySelector('#admin-rows').addEventListener('click', (event) => {
       const button = event.target.closest('[data-admin-action]');
       if (!button) return;
       const id = button.dataset.id;
       const item = store.getArchive(id);
-      if (button.dataset.adminAction === 'edit') return openModal(item, button);
-      if (button.dataset.adminAction === 'feature') {
+      const action = button.dataset.adminAction;
+
+      if (action === 'edit') return openArchiveModal(item, button);
+
+      if (action === 'feature') {
         try {
           store.toggleFeatured(id);
           toast('Status unggulan diperbarui.');
@@ -1263,48 +1388,104 @@ function viewAdmin() {
         }
         return;
       }
-      if (button.dataset.adminAction === 'delete') {
-        if (!window.confirm(`Hapus arsip "${item?.title ?? ''}"?`)) return;
-        try {
-          store.deleteArchive(id);
-          toast('Arsip dihapus.');
-          refresh();
-        } catch (error) {
-          toast(error.message, 'error');
-        }
+
+      if (action === 'delete') {
+        openConfirm(
+          {
+            title: 'Hapus arsip?',
+            message: `Arsip "${item?.title ?? ''}" akan dihapus dari localStorage. Tindakan ini tidak dapat dibatalkan setelah dikonfirmasi.`,
+            confirmLabel: 'Hapus arsip',
+            trigger: button,
+          },
+          () => {
+            try {
+              store.deleteArchive(id);
+              toast('Arsip dihapus.');
+              refresh();
+            } catch (error) {
+              toast(error.message || 'Gagal menghapus arsip.', 'error');
+            }
+          },
+        );
       }
     });
 
     root.querySelector('[data-admin-action="add"]').addEventListener('click', (event) =>
-      openModal(null, event.currentTarget),
+      openArchiveModal(null, event.currentTarget),
     );
+
+    root.querySelector('#export-archives').addEventListener('click', () => {
+      try {
+        const json = store.exportArchives();
+        const blob = new Blob([json], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = 'museum-of-almost-archives.json';
+        document.body.append(link);
+        link.click();
+        link.remove();
+        URL.revokeObjectURL(url);
+        toast('Arsip berhasil diekspor.');
+      } catch (error) {
+        toast(error.message || 'Gagal mengekspor arsip.', 'error');
+      }
+    });
+
+    const importButton = root.querySelector('#import-archives');
+    const importInput = root.querySelector('#import-file');
+    importButton.addEventListener('click', () => importInput.click());
+    importInput.addEventListener('change', async (event) => {
+      const file = event.target.files?.[0];
+      if (!file) return;
+      const parsed = await store.parseArchivesFile(file);
+      event.target.value = '';
+      if (!parsed.ok) {
+        toast(parsed.errors[0] ?? 'File arsip tidak valid.', 'error');
+        return;
+      }
+      openConfirm(
+        {
+          title: 'Ganti arsip dari file?',
+          message: `Data arsip saat ini (${store.getArchives().length} arsip) akan digantikan oleh ${parsed.archives.length} arsip dari file "${file.name}". Konfirmasi hanya mengganti data arsip.`,
+          confirmLabel: 'Import arsip',
+          trigger: importButton,
+        },
+        () => {
+          try {
+            store.saveArchives(parsed.archives);
+            toast('Arsip berhasil diimpor.');
+            refresh();
+          } catch (error) {
+            toast(error.message || 'Gagal mengimpor arsip.', 'error');
+          }
+        },
+      );
+    });
 
     form.addEventListener('submit', (event) => {
       event.preventDefault();
       const messages = validateForm();
-      if (Object.values(messages).some(Boolean)) {
-        errors.hidden = false;
-        errors.innerHTML = `<strong>Periksa kembali:</strong><ul>${Object.values(messages)
-          .filter(Boolean)
-          .map((message) => `<li>${escapeHtml(message)}</li>`)
-          .join('')}</ul>`;
-        return;
-      }
+      if (Object.values(messages).some(Boolean)) return showErrors(messages);
+      clearFieldErrors();
+
       const payload = {
-        title: form.elements.namedItem('title').value.trim(),
-        category: form.elements.namedItem('category').value,
-        origin: form.elements.namedItem('origin').value.trim(),
-        period: form.elements.namedItem('period').value.trim(),
-        archiveType: form.elements.namedItem('archiveType').value.trim() || 'Arsip',
-        description: form.elements.namedItem('description').value.trim(),
-        story: form.elements.namedItem('story').value.trim(),
-        historicalValue: form.elements.namedItem('historicalValue').value.trim(),
+        title: value('title'),
+        category: value('category'),
+        origin: value('origin'),
+        period: value('period'),
+        archiveType: value('archiveType'),
+        description: value('description'),
+        historicalValue: value('historicalValue'),
+        imageUrl: value('imageUrl'),
+        audioUrl: value('audioUrl'),
         featured: form.elements.namedItem('featured').checked,
       };
+
       try {
         if (editingId) store.updateArchive(editingId, payload);
         else store.addArchive(payload);
-        closeModal();
+        closeModal(modal);
         toast(editingId ? 'Arsip diperbarui.' : 'Arsip ditambahkan.');
         refresh();
       } catch (error) {
@@ -1312,17 +1493,25 @@ function viewAdmin() {
       }
     });
 
-    root.querySelector('#reset-demo').addEventListener('click', () => {
-      const message =
-        'Reset semua data demo? Seluruh arsip akan kembali ke 8 data awal. Kontribusi dan pesan kapsul Anda akan hilang.';
-      if (!window.confirm(message)) return;
-      try {
-        store.resetDemo();
-        toast('Data demo berhasil direset.');
-        refresh();
-      } catch (error) {
-        toast(error.message || 'Gagal mereset data demo.', 'error');
-      }
+    root.querySelector('#reset-demo').addEventListener('click', (event) => {
+      openConfirm(
+        {
+          title: 'Reset Demo Data?',
+          message:
+            'Seluruh perubahan arsip saat ini akan digantikan oleh data contoh bawaan. Kontribusi dan Time Capsule tidak akan dihapus.',
+          confirmLabel: 'Reset Demo Data',
+          trigger: event.currentTarget,
+        },
+        () => {
+          try {
+            store.resetDemoData();
+            toast('Data arsip berhasil dikembalikan ke contoh bawaan.');
+            refresh();
+          } catch (error) {
+            toast(error.message || 'Gagal mereset data demo.', 'error');
+          }
+        },
+      );
     });
 
     root.querySelectorAll('[data-admin-tab]').forEach((tab) =>
