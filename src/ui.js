@@ -12,6 +12,7 @@ import {
   OPENING_QUESTION,
   TAGLINE,
   TIMELINE_PERIODS,
+  WHATSAPP_CONFIG,
 } from './products.js';
 import * as store from './store.js';
 
@@ -27,6 +28,8 @@ const ICONS = {
   plus: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>',
   check: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 4 4L19 6"/></svg>',
   alert: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4 2 20h20zM12 10v4m0 3h.01"/></svg>',
+  whatsapp:
+    '<svg class="icon--whatsapp" viewBox="0 0 24 24" aria-hidden="true"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg>',
 };
 
 function svg(name) {
@@ -40,6 +43,34 @@ export function escapeHtml(value) {
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#39;');
+}
+
+/**
+ * Nomor WhatsApp harus sudah dalam format internasional tanpa tanda `+`:
+ * digit saja, tidak diawali 0, panjang 8–15 digit (batas E.164).
+ * Placeholder seperti "628XXXXXXXXXX" sengaja ditolak.
+ */
+const WHATSAPP_NUMBER_PATTERN = /^[1-9]\d{7,14}$/;
+
+function isPlaceholderWhatsAppNumber(nomor) {
+  return /[Xx]/.test(String(nomor ?? ''));
+}
+
+export function isValidWhatsAppNumber(nomor) {
+  const value = String(nomor ?? '').trim();
+  if (isPlaceholderWhatsAppNumber(value)) return false;
+  return WHATSAPP_NUMBER_PATTERN.test(value);
+}
+
+/**
+ * Membangun tautan wa.me. Mengembalikan null untuk nomor tidak valid agar
+ * tidak pernah menghasilkan tautan WhatsApp yang salah/ke placeholder.
+ */
+export function buildWhatsAppUrl(nomor, pesan) {
+  if (!isValidWhatsAppNumber(nomor)) return null;
+  const value = String(nomor).trim();
+  const text = encodeURIComponent(String(pesan ?? '').trim());
+  return `https://wa.me/${value}?text=${text}`;
 }
 
 function pad(value, length = 3) {
@@ -269,6 +300,33 @@ function emptyState(title, description, buttonHtml = '') {
   </div>`;
 }
 
+/**
+ * Blok kontak pada section About. Nomor dibaca dari satu konfigurasi saja.
+ * Jika placeholder/belum valid, yang tampil adalah informasi, bukan tautan.
+ */
+function whatsappContactMarkup() {
+  const url = buildWhatsAppUrl(WHATSAPP_CONFIG.number, WHATSAPP_CONFIG.message);
+  if (!url) {
+    return `<div class="about-contact__action">
+      <button type="button" class="btn btn--outline whatsapp-button" disabled aria-describedby="whatsapp-unavailable">
+        ${svg('whatsapp')} Hubungi via WhatsApp
+      </button>
+      <p class="contact-unavailable" id="whatsapp-unavailable" role="status">
+        ${svg('alert')} Kontak WhatsApp belum tersedia.
+      </p>
+    </div>`;
+  }
+  return `<div class="about-contact__action">
+    <a
+      class="btn btn--primary whatsapp-button"
+      href="${escapeHtml(url)}"
+      target="_blank"
+      rel="noopener noreferrer"
+      aria-label="Hubungi MUSEUM OF ALMOST via WhatsApp"
+    >${svg('whatsapp')} Hubungi via WhatsApp</a>
+  </div>`;
+}
+
 /* ------------------------------------------------------------------ views */
 
 function viewEntrance() {
@@ -301,6 +359,15 @@ function viewEntrance() {
         <article><span class="values__no">01</span><h3>REMEMBER</h3><p>Mengakui bahwa hal kecil sering kali paling sulit ditinggalkan.</p></article>
         <article><span class="values__no">02</span><h3>RECORD</h3><p>Menulis ulang cerita sebelum detailnya hilang dari ingatan.</p></article>
         <article><span class="values__no">03</span><h3>RETURN</h3><p>Membuka kembali arsip agar generasi berikutnya bisa menemuinya.</p></article>
+      </div>
+
+      <div class="about-contact">
+        <div class="about-contact__copy">
+          <p class="eyebrow">GET IN TOUCH</p>
+          <h3>Ingin tahu lebih lanjut tentang koleksi kami?</h3>
+          <p>Tanyakan tentang arsip, kontribusi, atau cerita di balik pameran. Kami siap membantu.</p>
+        </div>
+        ${whatsappContactMarkup()}
       </div>
     </section>
 

@@ -189,6 +189,12 @@ img {
   stroke-linejoin: round;
 }
 
+/* Ikon merek yang diisi (berbeda dari ikon stroke generik). */
+.icon svg.icon--whatsapp {
+  fill: currentColor;
+  stroke: none;
+}
+
 #app {
   display: block;
   min-height: 60vh;
@@ -689,6 +695,68 @@ img {
 .values p {
   color: var(--text-muted);
   font-size: 14px;
+}
+
+.about-contact {
+  margin-top: var(--space-12);
+  padding-top: var(--space-8);
+  border-top: 1px solid var(--border);
+  display: grid;
+  gap: var(--space-6);
+  align-items: center;
+}
+
+.about-contact__copy {
+  max-width: 52ch;
+}
+
+.about-contact__copy h3 {
+  margin: var(--space-3) 0 var(--space-2);
+}
+
+.about-contact__copy p:not(.eyebrow) {
+  color: var(--text-muted);
+  font-size: 14px;
+}
+
+.about-contact__action {
+  display: grid;
+  gap: var(--space-2);
+  justify-items: start;
+}
+
+.whatsapp-button {
+  justify-self: start;
+}
+
+.whatsapp-button .icon {
+  font-size: 20px;
+}
+
+.btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.contact-unavailable {
+  justify-self: start;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: 44px;
+  padding: 10px 14px;
+  border: 1px solid var(--border);
+  border-left: 2px solid var(--meta);
+  border-radius: var(--radius);
+  background: var(--surface-2);
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
+.contact-unavailable .icon {
+  color: var(--meta);
+  font-size: 18px;
 }
 
 .stats {
@@ -1876,6 +1944,11 @@ img {
     gap: var(--space-6);
   }
 
+  .about-contact {
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: var(--space-12);
+  }
+
   .featured-grid {
     grid-template-columns: repeat(2, 1fr);
   }
@@ -2014,6 +2087,26 @@ img {
 
   .admin__content {
     min-width: 0;
+  }
+}
+
+@media (max-width: 767px) {
+  .about-contact__action,
+  .whatsapp-button,
+  .contact-unavailable {
+    width: 100%;
+    justify-items: stretch;
+    justify-self: stretch;
+  }
+
+  .whatsapp-button,
+  .contact-unavailable {
+    justify-content: center;
+  }
+
+  .about-contact {
+    margin-top: var(--space-8);
+    padding-top: var(--space-6);
   }
 }
 

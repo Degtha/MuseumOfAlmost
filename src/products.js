@@ -32,6 +32,23 @@ export const OPENING_QUESTION =
 
 export const TAGLINE = 'Not everything lost was meant to be forgotten.';
 
+/**
+ * Kontak publik MUSEUM OF ALMOST (bukan rahasia / bukan kredensial).
+ *
+ * Cara mengubah:
+ * - Isi `number` dengan digit saja, kode negara di depan, tanpa `+`, spasi,
+ *   atau tanda baca. Contoh Indonesia: "6281234567890".
+ * - Nilai "628XXXXXXXXXX" adalah placeholder dan sengaja TIDAK valid;
+ *   tombol WhatsApp akan otomatis berubah menjadi informasi "belum tersedia"
+ *   sampai nomor asli diisi di sini.
+ * - Pesan awal juga bisa disunting di sini agar tidak duplikat di ui.js.
+ */
+export const WHATSAPP_CONFIG = Object.freeze({
+  number: '628XXXXXXXXXX',
+  message:
+    'Halo, saya mengunjungi website MUSEUM OF ALMOST. Saya ingin mengetahui lebih lanjut mengenai museum dan arsip yang ditampilkan.',
+});
+
 export const SEED_ARCHIVES = Object.freeze([
   {
     id: 'arc_congklak',
